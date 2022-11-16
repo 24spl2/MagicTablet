@@ -1,0 +1,85 @@
+
+#define _CRT_SECURE_NO_WARNINGS
+#include "snail.cpp"
+#include "cow.cpp"
+#include <vector>
+#include <iostream>
+
+
+struct StretchyBuffer {
+
+        int capacity = 0;
+        int length = 0;
+        vec2 *data;
+    };
+
+void sbuff_push_back(StretchyBuffer *buffer, vec2 point) {
+
+    if (buffer->capacity == 0) {
+        //creates the array with initial size 16
+        buffer->data = (vec2*) calloc(16, sizeof(vec2));
+        buffer->capacity += 16;
+
+        //adds the point to the array
+        buffer->data[buffer->length] = point;
+        buffer->length = 1;
+
+    } else {
+
+        //maintains the array if the capacity goes over
+        if (buffer->capacity == buffer->length) {
+            buffer->data = (vec2*) realloc(buffer->data, (sizeof(vec2) * 2 * buffer->capacity));
+            buffer->capacity = 2 * buffer->capacity;
+        }
+
+        buffer->data[buffer->length] = point;
+        buffer->length++;
+    }
+}
+
+void sbuff_free(StretchyBuffer *buffer) {
+    free(buffer->data);
+    buffer->length = 0;
+    buffer->capacity = 0;
+    buffer->data = NULL;
+}
+
+
+void MagicTablet() {
+
+   std::vector<std::vector<vec2>> strokes = {};
+
+    while (begin_frame()) {
+        static Camera2D camera = { 5 };
+        camera_move(&camera);
+        mat4 PV = camera_get_PV(&camera);
+
+        gl_PV(PV);
+
+        if (input.mouse_left_pressed) {
+            std::vector<vec2> segment = {};
+            strokes.push_back(segment);
+        }
+
+        if (input.mouse_left_held) {
+            strokes.back().push_back(input_get_mouse_position_in_world_coordinates(PV));
+        }
+
+        if (input.key_pressed['x']) {
+            strokes = {};
+        }
+
+        //need to do the x button as well.
+        for (int i = 0; i < (int) strokes.size(); i++) {
+            basic_draw(LINE_STRIP, PV, strokes[i].size(), strokes[i].data(), {1, 1, 1});
+        }
+
+    }
+}                                                            
+
+
+int main() {
+    init(false, "draw");
+    MagicTablet();
+    return 0;
+}
